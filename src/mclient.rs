@@ -2091,26 +2091,22 @@ fn print_room_members(room_id: &OwnedRoomId, members: &[RoomMember], output: Out
         }
         Output::JsonSpec => (),
         _ => {
-            let mut first: bool = true;
-            print!("{{\"room_id\": {:?}, \"members\": [", room_id);
-            for m in members {
-                if first {
-                    first = false;
-                } else {
-                    print!(", ");
-                }
-                print!(
-                    "{{\"user_id\": {:?}, \"display_name\": {:?}, \"name\": {:?}, \
-                    \"avatar_url\": {:?}, \"power_level\": {:?}, \"membership\": \"{:?}\"}}",
-                    m.user_id(),
-                    m.display_name(), // .as_deref().unwrap_or(""),
-                    m.name(),
-                    m.avatar_url(), // .as_deref().unwrap_or("".into()),
-                    m.power_level(),
-                    m.membership(),
-                );
-            }
-            println!("]}}");
+        let members_json = members.iter().map(|m| {
+            json::object!(
+                user_id: m.user_id().to_string(),
+                display_name: m.display_name().map(|n| n.to_string()),
+                name: m.name().to_string(),
+                avatar_url: m.avatar_url().map(|u| u.to_string()),
+                power_level: m.power_level(),
+                membership: m.membership().to_string()
+            )
+        }).collect::<Vec<_>>();
+
+        let json = json::object!(
+            room_id: room_id.to_string(),
+            members: members_json
+        );
+        println!("{}", json.dump());
         }
     }
 }
