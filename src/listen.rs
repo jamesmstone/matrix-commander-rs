@@ -211,26 +211,10 @@ fn handle_originalsyncroomredactionevent(ev: OriginalSyncRoomRedactionEvent, roo
         "Received a message for OriginalSyncRoomRedactionEvent. {:?}",
         ev
     );
-    // Serialize it to a JSON string.
-    let j = match serde_json::to_string(&ev.content) {
-        Ok(jsonstr) => {
-            // this event does not contain the room_id, other events do.
-            // People are missing the room_id in output.
-            // Nasty hack: inserting the room_id into the JSON string.
-            let mut s = jsonstr;
-            s.insert_str(s.len() - 1, ",\"event_id\":\"\"");
-            s.insert_str(s.len() - 2, ev.event_id.as_str());
-            s.insert_str(s.len() - 1, ",\"sender\":\"\"");
-            s.insert_str(s.len() - 2, ev.sender.as_str());
-            s.insert_str(s.len() - 1, ",\"origin_server_ts\":\"\"");
-            s.insert_str(s.len() - 2, &ev.origin_server_ts.0.to_string());
-            s.insert_str(s.len() - 1, ",\"room_id\":\"\"");
-            s.insert_str(s.len() - 2, room.room_id().as_str());
-            s
-        }
-        Err(e) => e.to_string(),
+    match serde_json::to_string(&ev.content) {
+        Ok(s) => println!("{}", s),
+        Err(e) => println!("{}", e)
     };
-    println!("{}", j);
 }
 
 fn handle_redactedsyncroomredactionevent(ev: RedactedSyncRoomRedactionEvent, room: Room) {
@@ -238,26 +222,10 @@ fn handle_redactedsyncroomredactionevent(ev: RedactedSyncRoomRedactionEvent, roo
         "Received a message for RedactedSyncRoomRedactionEvent. {:?}",
         ev
     );
-    // Serialize it to a JSON string.
-    let j = match serde_json::to_string(&ev.content) {
-        Ok(jsonstr) => {
-            // this event does not contain the room_id, other events do.
-            // People are missing the room_id in output.
-            // Nasty hack: inserting the room_id into the JSON string.
-            let mut s = jsonstr;
-            s.insert_str(s.len() - 1, ",\"event_id\":\"\"");
-            s.insert_str(s.len() - 2, ev.event_id.as_str());
-            s.insert_str(s.len() - 1, ",\"sender\":\"\"");
-            s.insert_str(s.len() - 2, ev.sender.as_str());
-            s.insert_str(s.len() - 1, ",\"origin_server_ts\":\"\"");
-            s.insert_str(s.len() - 2, &ev.origin_server_ts.0.to_string());
-            s.insert_str(s.len() - 1, ",\"room_id\":\"\"");
-            s.insert_str(s.len() - 2, room.room_id().as_str());
-            s
-        }
-        Err(e) => e.to_string(),
+    match serde_json::to_string(&ev.content) {
+        Ok(s) => println!("{}", s),
+        Err(e) => println!("{}", e)
     };
-    println!("{}", j);
 }
 
 /// Utility function to handle SyncRoomRedactionEvent events.
@@ -369,26 +337,10 @@ async fn handle_syncroommessageevent(
     match ev {
         SyncMessageLikeEvent::Original(orginialmessagelikeevent) => {
             if !context.output.is_text() {
-                // Serialize it to a JSON string.
-                let j = match serde_json::to_string(&orginialmessagelikeevent.content) {
-                    Ok(jsonstr) => {
-                        // this event does not contain the room_id, other events do.
-                        // People are missing the room_id in output.
-                        // Nasty hack: inserting the room_id into the JSON string.
-                        let mut s = jsonstr;
-                        s.insert_str(s.len() - 1, ",\"event_id\":\"\"");
-                        s.insert_str(s.len() - 2, orginialmessagelikeevent.event_id.as_str());
-                        s.insert_str(s.len() - 1, ",\"sender\":\"\"");
-                        s.insert_str(s.len() - 2, orginialmessagelikeevent.sender.as_str());
-                        s.insert_str(s.len() - 1, ",\"origin_server_ts\":\"\"");
-                        s.insert_str(s.len() - 2, &orginialmessagelikeevent.origin_server_ts.0.to_string());
-                        s.insert_str(s.len() - 1, ",\"room_id\":\"\"");
-                        s.insert_str(s.len() - 2, room.room_id().as_str());
-                        s
-                    }
-                    Err(e) => e.to_string(),
+                match serde_json::to_string(&orginialmessagelikeevent.content) {
+                    Ok(s) => println!("{}", s),
+                    Err(e) => println!("{}", e)
                 };
-                println!("{}", j);
                 return;
             }
             handle_originalsyncmessagelikeevent(
