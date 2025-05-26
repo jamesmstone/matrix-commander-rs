@@ -181,7 +181,7 @@ fn handle_originalsyncmessagelikeevent(
 // None of the args can be borrowed because this function is passed into a spawned process.
 async fn handle_redactedsyncroommessageevent(
     ev: RedactedSyncRoomMessageEvent,
-    room: Room,
+    _room: Room,
     _client: Client,
     context: Ctx<EvHandlerContext>,
 ) {
@@ -206,7 +206,7 @@ async fn handle_redactedsyncroommessageevent(
     );
 }
 
-fn handle_originalsyncroomredactionevent(ev: OriginalSyncRoomRedactionEvent, room: Room) {
+fn handle_originalsyncroomredactionevent(ev: OriginalSyncRoomRedactionEvent, _room: Room) {
     debug!(
         "Received a message for OriginalSyncRoomRedactionEvent. {:?}",
         ev
@@ -225,7 +225,7 @@ fn handle_originalsyncroomredactionevent(ev: OriginalSyncRoomRedactionEvent, roo
     println!("{}", json.to_string());
 }
 
-fn handle_redactedsyncroomredactionevent(ev: RedactedSyncRoomRedactionEvent, room: Room) {
+fn handle_redactedsyncroomredactionevent(ev: RedactedSyncRoomRedactionEvent, _room: Room) {
     debug!(
         "Received a message for RedactedSyncRoomRedactionEvent. {:?}",
         ev
@@ -243,8 +243,7 @@ fn handle_redactedsyncroomredactionevent(ev: RedactedSyncRoomRedactionEvent, roo
 
     let json = json!({
     "content": {
-        "redacts": ev.content.redacts,
-        "reason": ev.content.reason
+        "redacts": ev.content.redacts
     },
     "event_id": ev.event_id,
     "sender": ev.sender,
