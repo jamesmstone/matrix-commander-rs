@@ -211,10 +211,18 @@ fn handle_originalsyncroomredactionevent(ev: OriginalSyncRoomRedactionEvent, roo
         "Received a message for OriginalSyncRoomRedactionEvent. {:?}",
         ev
     );
-    match serde_json::to_string(&ev.content) {
-        Ok(s) => println!("{}", s),
-        Err(e) => println!("{}", e)
-    };
+    use serde_json::json;
+
+    let json = json!({
+    "content": {
+        "redacts": ev.content.redacts
+    },
+    "redacts": ev.redacts,
+    "event_id": ev.event_id,
+    "sender": ev.sender,
+    "origin_server_ts": ev.origin_server_ts.get(),
+});
+    println!("{}", json.to_string());
 }
 
 fn handle_redactedsyncroomredactionevent(ev: RedactedSyncRoomRedactionEvent, room: Room) {
@@ -222,10 +230,27 @@ fn handle_redactedsyncroomredactionevent(ev: RedactedSyncRoomRedactionEvent, roo
         "Received a message for RedactedSyncRoomRedactionEvent. {:?}",
         ev
     );
-    match serde_json::to_string(&ev.content) {
-        Ok(s) => println!("{}", s),
-        Err(e) => println!("{}", e)
-    };
+    // RedactedRoomRedactionEventContent
+    //  redacts: Option<OwnedEventId>,
+    // RedactedSyncRoomRedactionEvent
+    // pub content: RedactedRoomRedactionEventContent,
+    // pub event_id: OwnedEventId,
+    // pub sender: OwnedUserId,
+    // pub origin_server_ts: MilliSecondsSinceUnixEpoch,
+    // pub unsigned: RedactedUnsigned,
+
+    use serde_json::json;
+
+    let json = json!({
+    "content": {
+        "redacts": ev.content.redacts
+        "reason": ev.content.reason
+    },
+    "event_id": ev.event_id,
+    "sender": ev.sender,
+    "origin_server_ts": ev.origin_server_ts.get(),
+});
+    println!("{}", json.to_string());
 }
 
 /// Utility function to handle SyncRoomRedactionEvent events.
