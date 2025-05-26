@@ -243,7 +243,7 @@ fn handle_redactedsyncroomredactionevent(ev: RedactedSyncRoomRedactionEvent, roo
 
     let json = json!({
     "content": {
-        "redacts": ev.content.redacts
+        "redacts": ev.content.redacts,
         "reason": ev.content.reason
     },
     "event_id": ev.event_id,
