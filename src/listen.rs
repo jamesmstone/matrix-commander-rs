@@ -181,7 +181,7 @@ fn handle_originalsyncmessagelikeevent(
 // None of the args can be borrowed because this function is passed into a spawned process.
 async fn handle_redactedsyncroommessageevent(
     ev: RedactedSyncRoomMessageEvent,
-    _room: Room,
+    room: Room,
     _client: Client,
     context: Ctx<EvHandlerContext>,
 ) {
@@ -194,10 +194,14 @@ async fn handle_redactedsyncroommessageevent(
         return;
     }
     if !context.output.is_text() {
-        match serde_json::to_string(&ev.content) {
-            Ok(s) => println!("{}", s),
-            Err(e) => println!("{}", e)
-        };
+        let mut json_value = serde_json::to_value(&ev.content).unwrap_or_default();
+        if let serde_json::Value::Object(ref mut map) = json_value {
+            map.insert("room_id".to_string(), serde_json::Value::String(room.room_id().to_string()));
+            match serde_json::to_string(&json_value) {
+                Ok(s) => println!("{}", s),
+                Err(e) => println!("{}", e)
+            }
+        }
         return;
     }
     debug!(
@@ -206,7 +210,7 @@ async fn handle_redactedsyncroommessageevent(
     );
 }
 
-fn handle_originalsyncroomredactionevent(ev: OriginalSyncRoomRedactionEvent, _room: Room) {
+fn handle_originalsyncroomredactionevent(ev: OriginalSyncRoomRedactionEvent, room: Room) {
     debug!(
         "Received a message for OriginalSyncRoomRedactionEvent. {:?}",
         ev
@@ -214,6 +218,7 @@ fn handle_originalsyncroomredactionevent(ev: OriginalSyncRoomRedactionEvent, _ro
     use serde_json::json;
 
     let json = json!({
+    "room_id": room.room_id(),
     "content": {
         "redacts": ev.content.redacts
     },
@@ -225,7 +230,7 @@ fn handle_originalsyncroomredactionevent(ev: OriginalSyncRoomRedactionEvent, _ro
     println!("{}", json.to_string());
 }
 
-fn handle_redactedsyncroomredactionevent(ev: RedactedSyncRoomRedactionEvent, _room: Room) {
+fn handle_redactedsyncroomredactionevent(ev: RedactedSyncRoomRedactionEvent, room: Room) {
     debug!(
         "Received a message for RedactedSyncRoomRedactionEvent. {:?}",
         ev
@@ -242,6 +247,7 @@ fn handle_redactedsyncroomredactionevent(ev: RedactedSyncRoomRedactionEvent, _ro
     use serde_json::json;
 
     let json = json!({
+    "room_id": room.room_id(),
     "content": {
         "redacts": ev.content.redacts
     },
@@ -361,10 +367,14 @@ async fn handle_syncroommessageevent(
     match ev {
         SyncMessageLikeEvent::Original(orginialmessagelikeevent) => {
             if !context.output.is_text() {
-                match serde_json::to_string(&orginialmessagelikeevent.content) {
-                    Ok(s) => println!("{}", s),
-                    Err(e) => println!("{}", e)
-                };
+                let mut json_value = serde_json::to_value(&orginialmessagelikeevent.content).unwrap_or_default();
+                if let serde_json::Value::Object(ref mut map) = json_value {
+                    map.insert("room_id".to_string(), serde_json::Value::String(room.room_id().to_string()));
+                    match serde_json::to_string(&json_value) {
+                        Ok(s) => println!("{}", s),
+                        Err(e) => println!("{}", e)
+                    }
+                }
                 return;
             }
             handle_originalsyncmessagelikeevent(
