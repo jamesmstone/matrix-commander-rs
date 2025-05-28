@@ -197,6 +197,7 @@ async fn handle_redactedsyncroommessageevent(
         let mut json_value = serde_json::to_value(&ev.content).unwrap_or_default();
         if let serde_json::Value::Object(ref mut map) = json_value {
             map.insert("room_id".to_string(), serde_json::Value::String(room.room_id().to_string()));
+            map.insert("origin_server_ts".to_string(), serde_json::Value::Number(serde_json::Number::from(u64::from(ev.origin_server_ts.get()))));
             match serde_json::to_string(&json_value) {
                 Ok(s) => println!("{}", s),
                 Err(e) => println!("{}", e)
@@ -370,6 +371,7 @@ async fn handle_syncroommessageevent(
                 let mut json_value = serde_json::to_value(&orginialmessagelikeevent.content).unwrap_or_default();
                 if let serde_json::Value::Object(ref mut map) = json_value {
                     map.insert("room_id".to_string(), serde_json::Value::String(room.room_id().to_string()));
+                    map.insert("origin_server_ts".to_string(), serde_json::Value::Number(serde_json::Number::from(u64::from(orginialmessagelikeevent.origin_server_ts.get()))));
                     match serde_json::to_string(&json_value) {
                         Ok(s) => println!("{}", s),
                         Err(e) => println!("{}", e)
