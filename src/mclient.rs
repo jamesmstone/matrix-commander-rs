@@ -1997,18 +1997,15 @@ async fn print_room_state(room_id: &OwnedRoomId, room: &Room, output: Output) ->
         }
         // Output::JsonSpec => (), // These events should be spec compliant
         _ => {
-            println!(
-                "{{\"room_id\": {:?}, \
-                     \"RoomMemberEventContent\": [ {{ {} }} ], \
-                     \"RoomPowerLevelsEventContent\": [ {{ {} }} ], \
-                     \"RoomNameEventContent\": [ {{ {} }} ], \
-                     \"RoomTopicEventContent\": [ {{ {} }} ] }}",
-                room_id,
-                serde_json::to_string(&member_evs).unwrap_or_else(|_| r#""""#.to_string()),
-                serde_json::to_string(&power_level_evs).unwrap_or_else(|_| r#""""#.to_string()),
-                serde_json::to_string(&name_evs).unwrap_or_else(|_| r#""""#.to_string()),
-                serde_json::to_string(&topic_evs).unwrap_or_else(|_| r#""""#.to_string()),
-            );
+            let json_value = serde_json::json!({
+                "room_id": room_id,
+                "RoomMemberEventContent": serde_json::to_string(&member_evs).unwrap_or_else(|_| r#""""#.to_string()),
+                "RoomPowerLevelsEventContent": serde_json::to_string(&power_level_evs).unwrap_or_else(|_| r#""""#.to_string()),
+                "RoomNameEventContent": serde_json::to_string(&name_evs).unwrap_or_else(|_| r#""""#.to_string()),
+                "RoomTopicEventContent": serde_json::to_string(&topic_evs).unwrap_or_else(|_| r#""""#.to_string())
+            });
+
+            println!("{}", serde_json::to_string(&json_value).unwrap());
         }
     }
     Ok(())
