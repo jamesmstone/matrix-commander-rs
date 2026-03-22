@@ -1106,15 +1106,15 @@ pub(crate) fn print_common_room(room: &room::Room, output: Output) {
         ),
         Output::JsonSpec => (),
         _ => {
-            println!(
-                            "{{\"room_id\": {:?}, \"room_type\": {}, \"canonical_alias\": {:?}, \"alt_aliases\": {}, \"name\": {:?}, \"topic\": {:?}}}",
-                            room.room_id(),
-                            serde_json::to_string(&room.clone_info().room_type()).unwrap_or_else(|_| r#""""#.to_string()), // serialize, empty string as default
-                            room.canonical_alias().map_or(r#""#.to_string(),|v|v.to_string()),
-                            serde_json::to_string(&room.alt_aliases()).unwrap_or_else(|_| r#"[]"#.to_string()), // serialize, empty array as default
-                            room.name().unwrap_or_default(),
-                            room.topic().unwrap_or_default(),
-                        );
+            let json = serde_json::json!({
+                "room_id": room.room_id().to_string(),
+                "room_type": room.clone_info().room_type(),
+                "canonical_alias": room.canonical_alias().map(|a| a.to_string()).unwrap_or_default(),
+                "alt_aliases": room.alt_aliases(),
+                "name": room.name().unwrap_or_default(),
+                "topic": room.topic().unwrap_or_default(),
+            });
+            println!("{}", serde_json::to_string(&json).unwrap_or_default());
         }
     }
 }
