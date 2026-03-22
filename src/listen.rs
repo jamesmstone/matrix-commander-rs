@@ -372,6 +372,7 @@ async fn handle_syncroommessageevent(
                 if let serde_json::Value::Object(ref mut map) = json_value {
                     map.insert("room_id".to_string(), serde_json::Value::String(room.room_id().to_string()));
                     map.insert("origin_server_ts".to_string(), serde_json::Value::Number(serde_json::Number::from(u64::from(orginialmessagelikeevent.origin_server_ts.get()))));
+                    map.insert("sender".to_string(), serde_json::Value::String(orginialmessagelikeevent.sender.to_string()));
                     match serde_json::to_string(&json_value) {
                         Ok(s) => println!("{}", s),
                         Err(e) => println!("{}", e)
