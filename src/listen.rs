@@ -550,7 +550,10 @@ pub(crate) async fn listen_forever(
         Err(e) => {
             // this does not catch Control-C
             error!("Event loop reported: {:?}", e);
-            Ok(())
+            // Propagate the error so the process exits non-zero. A sync
+            // timeout must not look like a clean shutdown, otherwise the
+            // systemd unit (Restart=on-failure) never resyncs.
+            Err(e.into())
         }
     }
 }
