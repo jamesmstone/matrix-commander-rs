@@ -198,6 +198,8 @@ async fn handle_redactedsyncroommessageevent(
         if let serde_json::Value::Object(ref mut map) = json_value {
             map.insert("room_id".to_string(), serde_json::Value::String(room.room_id().to_string()));
             map.insert("origin_server_ts".to_string(), serde_json::Value::Number(serde_json::Number::from(u64::from(ev.origin_server_ts.get()))));
+            map.insert("sender".to_string(), serde_json::Value::String(ev.sender.to_string()));
+            map.insert("event_id".to_string(), serde_json::Value::String(ev.event_id.to_string()));
             match serde_json::to_string(&json_value) {
                 Ok(s) => println!("{}", s),
                 Err(e) => println!("{}", e)
@@ -373,6 +375,7 @@ async fn handle_syncroommessageevent(
                     map.insert("room_id".to_string(), serde_json::Value::String(room.room_id().to_string()));
                     map.insert("origin_server_ts".to_string(), serde_json::Value::Number(serde_json::Number::from(u64::from(orginialmessagelikeevent.origin_server_ts.get()))));
                     map.insert("sender".to_string(), serde_json::Value::String(orginialmessagelikeevent.sender.to_string()));
+                    map.insert("event_id".to_string(), serde_json::Value::String(orginialmessagelikeevent.event_id.to_string()));
                     match serde_json::to_string(&json_value) {
                         Ok(s) => println!("{}", s),
                         Err(e) => println!("{}", e)
@@ -572,6 +575,7 @@ pub(crate) async fn listen_tail(
     client: &Client,
     roomnames: &Vec<String>, // roomId
     number: u64,             // number of messages to print, N
+    since_ts: u64,           // stop paginating at events older than this ms timestamp, 0 = off
     listen_self: bool,       // listen to my own messages?
     whoami: OwnedUserId,
     output: Output,
@@ -635,12 +639,41 @@ pub(crate) async fn listen_tail(
 
     let mut err_count = 0u32;
     for roomid in roomids.iter() {
+        let jroom = match client.get_room(roomid.clone().as_ref()) {
+            Some(room) => room,
+            None => {
+                error!("Error: room {:?} not found in local store.", roomid);
+                err_count += 1;
+                continue;
+            }
+        };
+        // Paginate backwards through the room history in chunks, starting at
+        // the most recent event, until N events have been fetched, an event
+        // older than since_ts is encountered, or the history is exhausted.
+        let mut remaining = number;
+        let mut from_token: Option<String> = None;
+        let mut reached_since = false;
+        while remaining > 0 && !reached_since {
         let mut options = MessagesOptions::backward(); // .from("t47429-4392820_219380_26003_2265");
-        options.limit = UInt::new(number).unwrap();
-        let jroom = client.get_room(roomid.clone().as_ref()).unwrap();
+        options.limit = UInt::new(std::cmp::min(remaining, 1000)).unwrap();
+        options.from = from_token.clone();
         let msgs = jroom.messages(options).await;
         // debug!("\n\nmsgs = {:?} \n\n", msgs);
-        let chunk = msgs.unwrap().chunk;
+        let response = match msgs {
+            Ok(response) => response,
+            Err(ref e) => {
+                error!(
+                    "Error: failed to get messages for room {:?}. Error reported is {:?}.",
+                    roomid, e
+                );
+                err_count += 1;
+                break;
+            }
+        };
+        let chunk = response.chunk;
+        if chunk.is_empty() {
+            break;
+        }
         for index in 0..chunk.len() {
             debug!(
                 "processing message {:?} out of {:?}",
@@ -650,9 +683,23 @@ pub(crate) async fn listen_tail(
             let anytimelineevent = &chunk[chunk.len() - 1 - index]; // reverse ordering, getting older msg first
                                                                     // Todo : dump the JSON serialized string via Json API
 
-            let rawevent: AnyTimelineEvent = anytimelineevent.event.deserialize().unwrap();
+            let rawevent: AnyTimelineEvent = match anytimelineevent.event.deserialize() {
+                Ok(rawevent) => rawevent,
+                Err(ref e) => {
+                    debug!(
+                        "Skipping event that failed to deserialize. Error reported is {:?}.",
+                        e
+                    );
+                    continue;
+                }
+            };
             // print_type_of(&rawevent); // ruma_common::events::enums::AnyTimelineEvent
             debug!("rawevent = value is {:?}\n", rawevent);
+            if since_ts > 0 && u64::from(rawevent.origin_server_ts().get()) < since_ts {
+                // this event predates since_ts; skip it and stop after this chunk
+                reached_since = true;
+                continue;
+            }
             // rawevent = Ok(MessageLike(RoomMessage(Original(OriginalMessageLikeEvent { content: RoomMessageEventContent {
             // msgtype: Text(TextMessageEventContent { body: "54", formatted: None }), relates_to: Some(_Custom) }, event_id: "$xxx", sender: "@u:some.homeserver.org", origin_server_ts: MilliSecondsSinceUnixEpoch(123), room_id: "!rrr:some.homeserver.org", unsigned: MessageLikeUnsigned { age: Some(123), transaction_id: None, relations: None } }))))
             if !output.is_text() {
@@ -737,6 +784,12 @@ pub(crate) async fn listen_tail(
                 _ => debug!("State event, not interested in that."),
             }
         }
+        remaining = remaining.saturating_sub(chunk.len() as u64);
+        match response.end {
+            Some(end) => from_token = Some(end),
+            None => break, // start of room history reached
+        }
+        } // end pagination loop
     }
     if err_count != 0 {
         Err(Error::NotImplementedYet)

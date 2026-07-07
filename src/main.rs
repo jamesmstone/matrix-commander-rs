@@ -1322,6 +1322,22 @@ pub struct Args {
     #[arg(long, default_value_t = 0u64)]
     tail: u64,
 
+    /// Stop fetching messages at a given timestamp.
+    /// Details::
+    /// The '--tail-since-ts' option is used together with
+    /// '--listen tail'. It takes one argument, a timestamp in
+    /// milliseconds since the Unix epoch. '--listen tail'
+    /// paginates backwards through the room history, newest
+    /// events first. Pagination stops as soon as an event
+    /// older than the given timestamp is encountered, when
+    /// '--tail' N events have been fetched, or when the start
+    /// of the room history is reached, whichever comes first.
+    /// A value of 0, the default, disables the timestamp
+    /// cut-off. Look at '--listen' and '--tail' as those
+    /// options are related to '--tail-since-ts'.
+    #[arg(long, default_value_t = 0u64)]
+    tail_since_ts: u64,
+
     /// Get your own messages.
     /// Details::
     /// If set and listening, then program will listen to and
@@ -2029,6 +2045,7 @@ impl Args {
             sync: Sync::Full,
             listen: Listen::Never,
             tail: 0u64,
+            tail_since_ts: 0u64,
             listen_self: false,
             whoami: false,
             output: Output::Text,
@@ -3084,6 +3101,7 @@ pub(crate) async fn cli_listen_tail(client: &Client, ap: &Args) -> Result<(), Er
         client,
         &ap.room,
         ap.tail,
+        ap.tail_since_ts,
         ap.listen_self,
         crate::whoami(ap),
         ap.output,
